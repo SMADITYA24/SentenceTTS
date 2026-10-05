@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SentenceTTS Reader</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header class="header">
+    <span class="dot"></span>
+    <h1>sentence<span class="accent">tts</span></h1>
+  </header>
+
+  <div id="error" class="error" style="display:none;"></div>
+
+  <div id="pdf-banner" class="pdf-banner" style="display:none;">
+    <span id="pdf-banner-text">PDF detected</span>
+    <button id="pdf-open" class="mini-btn">☰ Read this PDF</button>
+  </div>
+
+  <div class="transport">
+    <button id="prev" class="icon-btn" title="Previous sentence" aria-label="Previous sentence">⏮</button>
+    <button id="play-pause" class="play-btn">▶ Play</button>
+    <button id="next" class="icon-btn" title="Next sentence" aria-label="Next sentence">⏭</button>
+  </div>
+  <button id="stop" class="stop-btn">■ Stop</button>
+
+  <p id="status" class="status">Not started — press Play to detect and read this page.</p>
+
+  <div class="field">
+    <label for="engine">engine</label>
+    <select id="engine">
+      <option value="gfree">Google Free (no key, Indian English ✓)</option>
+      <option value="gcloud">Google Cloud (best en-IN neural, needs key)</option>
+      <option value="piper">Piper (offline neural, needs host)</option>
+      <option value="system">System (browser voices, offline)</option>
+    </select>
+  </div>
+
+  <div class="field voice-field">
+    <label for="voice">voice <span id="voice-hint" class="value"></span></label>
+    <input type="text" id="voice-search" placeholder="filter — india, uk, neural…" autocomplete="off" list="voice-list" />
+    <datalist id="voice-list"></datalist>
+    <input type="hidden" id="voice" />
+  </div>
+
+  <div class="field">
+    <label for="rate">speed <span id="rate-val" class="value">1.0x</span></label>
+    <input type="range" id="rate" min="0.5" max="4" step="0.1" value="1" />
+  </div>
+
+  <div class="field">
+    <label for="pitch">pitch <span id="pitch-val" class="value">1.0</span></label>
+    <input type="range" id="pitch" min="0" max="2" step="0.1" value="1" />
+  </div>
+
+  <details class="adv">
+    <summary>advanced</summary>
+
+    <div class="field" id="gcloud-key-field" style="display:none;">
+      <label for="gcloud-key">google cloud api key <span id="gcloud-key-status" class="value"></span></label>
+      <input type="password" id="gcloud-key" placeholder="paste your Google Cloud TTS API key" autocomplete="off" />
+      <button id="gcloud-save" class="mini-btn">save & test key</button>
+    </div>
+
+    <p id="piper-help" class="hint" style="display:none;">Piper needs a native-messaging host — see PIPER_SETUP.md.</p>
+  </details>
+
+  <p class="hint">controls stay pinned to the page bottom while reading — closing this popup won't stop playback. click any sentence on the page to jump the reader there.</p>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SentenceTTS — PDF Reader</title>
+  <style>
+    :root {
+      --bg: #141208;
+      --panel: #1e1c10;
+      --border: #343018;
+      --ink: #e9e5da;
+      --dim: #9c968a;
+      --accent: #ffb703;
+      --danger: #e35d5d;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #toolbar {
+      flex: 0 0 auto;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 13px;
+    }
+    #toolbar .brand { font-weight: 700; color: var(--accent); margin-right: 4px; }
+    #toolbar select, #toolbar input[type="text"] {
+      background: #2a2714;
+      color: var(--ink);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px 7px;
+      font-size: 12px;
+      max-width: 220px;
+    }
+    #toolbar label { color: var(--dim); font-size: 11px; display: inline-flex; align-items: center; gap: 5px; }
+    #toolbar input[type="range"] { width: 90px; accent-color: var(--accent); }
+    #toolbar .transport button {
+      background: #2a2714;
+      color: var(--ink);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    #toolbar .transport button:hover { border-color: var(--accent); }
+    #toolbar .transport .play { background: var(--accent); color: #1a1400; font-weight: 700; min-width: 74px; }
+    #toolbar .transport .play:hover { background: #ffc933; border-color: var(--accent); }
+    #pdf-status { color: var(--dim); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; margin-left: auto; }
+    #title { color: var(--dim); font-size: 12px; max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #stage {
+      flex: 1 1 auto;
+      overflow: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+    }
+    #canvas-wrap {
+      flex: 0 0 auto;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+    }
+    #canvas-wrap canvas { width: auto; max-width: 100%; height: auto; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,.5); }
+    #canvas-wrap #pdf-page-label { color: var(--dim); font-size: 12px; font-family: ui-monospace, monospace; }
+    #canvas-ctl button {
+      background: transparent; border: 1px solid var(--border); color: var(--dim);
+      border-radius: 6px; padding: 3px 9px; font-size: 12px; cursor: pointer;
+    }
+    #canvas-ctl button:hover { color: var(--accent); border-color: var(--accent); }
+    article#ttsr-pdf-text {
+      max-width: 780px;
+      width: 100%;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 26px 30px;
+      line-height: 1.8;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 18px;
+    }
+    article#ttsr-pdf-text h1 {
+      font-family: Georgia, serif;
+      font-size: 26px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+      margin-bottom: 18px;
+    }
+    article#ttsr-pdf-text p { margin: 0 0 12px; }
+    #canvas-toggle {
+      background: transparent; border: 1px solid var(--border); color: var(--dim);
+      border-radius: 6px; padding: 3px 9px; font-size: 11px; cursor: pointer;
+    }
+    #canvas-toggle:hover { color: var(--accent); border-color: var(--accent); }
+    #loading { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--bg); z-index: 50; }
+    #loading p { color: var(--dim); }
+    #loading.error { color: var(--danger); }
+    #loading.hidden { display: none; }
+    #load-box { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 26px 32px; max-width: 460px; text-align: center; }
+    #loading-msg { margin: 0 0 16px; font-size: 14px; }
+    #pick-local[hidden] { display: none; }
+    #pick-local .why { color: var(--dim); font-size: 12px; margin: 0 0 14px; line-height: 1.5; }
+    #pick-btn {
+      background: var(--accent); color: #1a1400; border: 1px solid var(--accent);
+      border-radius: 8px; padding: 10px 18px; font-size: 14px; font-weight: 700; cursor: pointer;
+    }
+    #pick-btn:hover { background: #ffc933; }
+    #pick-local .hint { color: var(--dim); font-size: 11px; margin: 12px 0 0; }
+  </style>
+</head>
+<body>
+  <div id="loading">
+    <div id="load-box">
+      <p id="loading-msg">Loading PDF…</p>
+      <div id="pick-local" hidden>
+        <p class="why"></p>
+        <button type="button" id="pick-btn">Choose the PDF file…</button>
+        <input type="file" id="pick-input" accept="application/pdf,.pdf" hidden />
+        <p class="hint">or drag the .pdf file here</p>
+      </div>
+    </div>
+  </div>
+
+  <header id="toolbar">
+    <span class="brand">sentence<span style="color:var(--ink)">tts</span></span>
+    <span id="title"></span>
+
+    <label>engine
+      <select id="engine">
+        <option value="gfree">Google Free (no key)</option>
+        <option value="gcloud">Google Cloud (needs key)</option>
+        <option value="piper">Piper (offline)</option>
+        <option value="system">System</option>
+      </select>
+    </label>
+    <label>voice
+      <input type="text" id="voice-search" list="voice-list" placeholder="filter…" autocomplete="off" />
+      <datalist id="voice-list"></datalist>
+    </label>
+    <label>speed <input type="range" id="rate" min="0.5" max="4" step="0.1" value="1" /><span id="rate-val">1.0x</span></label>
+    <label>pitch <input type="range" id="pitch" min="0" max="2" step="0.1" value="1" /><span id="pitch-val">1.0</span></label>
+
+    <div class="transport">
+      <button id="prev" title="Previous sentence">⏮</button>
+      <button id="play-pause" class="play">▶ Play</button>
+      <button id="next" title="Next sentence">⏭</button>
+      <button id="stop" title="Stop">■</button>
+    </div>
+
+    <span id="pdf-status">—</span>
+  </header>
+
+  <main id="stage">
+    <section id="canvas-wrap">
+      <div id="canvas-ctl">
+        <button id="page-prev">‹ Page</button>
+        <span id="pdf-page-label"></span>
+        <button id="page-next">Page ›</button>
+      </div>
+      <canvas id="page-canvas"></canvas>
+    </section>
+    <button id="canvas-toggle" title="Show / hide the rendered PDF page">☰ show page</button>
+    <article id="ttsr-pdf-text"></article>
+  </main>
+
+  <script src="content.js"></script>
+  <script type="module" src="pdfviewer.js"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "name": "sentencetts-reader",
+  "version": "2.1.0",
+  "description": "Firefox extension: read any webpage or PDF aloud with live sentence highlighting using multiple TTS engines",
+  "private": true,
+  "scripts": {
+    "build": "echo 'No build step required — background.js is unminified source' && cp background-src.js ../background.js",
+    "build:chrome": "node build-chrome.js",
+    "verify": "node -c background-src.js && node -c build-chrome.js && echo 'Syntax OK'",
+    "package": "zip -r ../sentencetts-reader.zip . -x '*.git*' 'node_modules/*' 'build-source/*' '*.md' 'PIPER_SETUP.md' 'README.md'"
+  },
+  "keywords": [
+    "firefox",
+    "extension",
+    "tts",
+    "text-to-speech",
+    "sentence-highlighting"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {}
+}
